@@ -1,0 +1,69 @@
+﻿private void btn_connect_Click(object sender, EventArgs e)
+        {
+            if (!string.IsNullOrEmpty(txtBox_ipBox.Text))
+            {
+                try
+                {
+                    if (client == null)
+                    {
+                        client = new SimpleTcpClient(txtBox_ipBox.Text);
+                        client.Events.Connected += Events_Connected;
+                        client.Events.Disconnected += Events_Disconnected;
+                        client.Events.DataReceived += Events_DataReceived;
+                        btn_sendMess.Enabled = false;
+                    }
+                    client.Connect();
+                    btn_sendMess.Enabled = true;
+                    btn_connect.Enabled = false;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+      
+        private void ClientApp_Load(object sender, EventArgs e)
+        {
+            btn_sendMess.Enabled = false;
+        }
+
+        private void Events_DataReceived(object sender, DataReceivedEventArgs e)
+        {
+            this.Invoke((MethodInvoker)delegate
+            {
+                txtBox_serverChat.Text += $"Server: {Encoding.UTF8.GetString(e.Data)} {Environment.NewLine}";
+                //MessageBox.Show("RECIVED");
+            });
+
+        }
+
+        private void Events_Disconnected(object sender, ClientDisconnectedEventArgs e)
+        {
+            this.Invoke((MethodInvoker)delegate
+            {
+                txtBox_serverChat.Text += $"Server disconnected {Environment.NewLine}";
+            });
+        }
+
+        private void Events_Connected(object sender, ClientConnectedEventArgs e)
+        {
+            this.Invoke((MethodInvoker)delegate
+            {
+                txtBox_serverChat.Text += $"Server connected {Environment.NewLine}";
+            });
+        }
+
+        private void btn_sendMess_Click(object sender, EventArgs e)
+        {
+            if (client.IsConnected)
+            {
+                if (!string.IsNullOrEmpty(txtBox_message.Text))
+                {
+                    client.Send(txtBox_message.Text);
+                    txtBox_serverChat.Text += $"Me: {txtBox_message.Text}{Environment.NewLine}";
+                    txtBox_message.Text = string.Empty;
+                }
+            }
+        }
+    }
