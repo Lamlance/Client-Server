@@ -9,6 +9,7 @@ using System.Windows.Forms;
 
 namespace SERVER
 {
+   
     public class ServerSocketStuff
     {
         private static ListBox ipListBox;
@@ -18,7 +19,6 @@ namespace SERVER
 
         private static Dictionary<string,Socket> _clientDictionary =new Dictionary<string, Socket>();
 
-        
         public ServerSocketStuff(ref Socket server,ref ListBox ipList,ref TextBox MessBox)
         {
             //_clietnSocket = new List<Socket>();
@@ -78,6 +78,7 @@ namespace SERVER
                 ipListBox.Items.Add(str);
             }
         }
+        
         public static void AcceptCallBack(IAsyncResult async)
         {
             Socket socket = _serverSocket.EndAccept(async);
@@ -94,26 +95,82 @@ namespace SERVER
             _serverSocket.BeginAccept(new AsyncCallback(AcceptCallBack), null);
         }
 
+        //public static void RecivedComand(IAsyncResult async)
+        //{
+
+        //    Socket socket = (Socket)async.AsyncState;
+        //    string clietnIP = $"{((IPEndPoint)(socket.RemoteEndPoint)).Address}" +
+        //                      $":{((IPEndPoint)(socket.RemoteEndPoint)).Port}";
+        //    int recived = socket.EndReceive(async);
+        //    byte[] dataBuf = new byte[recived];
+        //    Array.Copy(_byteBuffer, dataBuf, recived);
+
+        //    string cmd_str = Encoding.ASCII.GetString(dataBuf);
+
+        //    if (cmd_str.Substring(0, 4).Equals("chat") == true)
+        //    {
+        //        string message = $"{clietnIP}:{cmd_str.Substring(5)} ";
+        //        var threadParameters = new System.Threading.ThreadStart(delegate { addTo_textBox(message); });
+        //        var thread2 = new System.Threading.Thread(threadParameters);
+        //        thread2.Start();
+        //    }
+        //    _clientDictionary[clietnIP].BeginReceive(_byteBuffer, 0, _byteBuffer.Length, SocketFlags.None, new AsyncCallback(RecivedComand), _clientDictionary[clietnIP]);
+        //}
+        public static bool SocketConnected(Socket s)
+        {
+            bool part1 = s.Poll(1000, SelectMode.SelectRead);
+            bool part2 = (s.Available == 0);
+            if (part1 & part2)
+                return false;
+            else
+                return true;
+        }
+        public static void RemoveTo_listBox(string text)
+        {
+            if (ipListBox.InvokeRequired)
+            {
+                // Call this same method 
+                Action safeWrite = delegate { RemoveTo_listBox($"{text}"); };
+                ipListBox.Invoke(safeWrite);
+            }
+            else
+                ipListBox.Items.Remove(text);
+        }
         public static void RecivedComand(IAsyncResult async)
         {
 
             Socket socket = (Socket)async.AsyncState;
             string clietnIP = $"{((IPEndPoint)(socket.RemoteEndPoint)).Address}" +
                               $":{((IPEndPoint)(socket.RemoteEndPoint)).Port}";
-            int recived = socket.EndReceive(async);
-            byte[] dataBuf = new byte[recived];
-            Array.Copy(_byteBuffer, dataBuf, recived);
-
-            string cmd_str = Encoding.ASCII.GetString(dataBuf);
-
-            if (cmd_str.Substring(0, 4).Equals("chat") == true)
+            //Socket sock = (Socket)async.AsyncState;
+            if (SocketConnected(socket) == false)
             {
-                string message = $"{clietnIP}:{cmd_str.Substring(5)} ";
-                var threadParameters = new System.Threading.ThreadStart(delegate { addTo_textBox(message); });
-                var thread2 = new System.Threading.Thread(threadParameters);
-                thread2.Start();
+                
+                _clientDictionary.Remove(clietnIP);
+                //5ipListBox.Items.Remove(clietnIP);
+                //RemoveTo_listBox(clietnIP);
+                //UserContrl1_LoadDataMethod(clietnIP);
+                RemoveTo_listBox(clietnIP);
+                return;
             }
-            _clientDictionary[clietnIP].BeginReceive(_byteBuffer, 0, _byteBuffer.Length, SocketFlags.None, new AsyncCallback(RecivedComand), _clientDictionary[clietnIP]);
+            else
+            {
+                int recived = socket.EndReceive(async);
+                byte[] dataBuf = new byte[recived];
+                Array.Copy(_byteBuffer, dataBuf, recived);
+
+                string cmd_str = Encoding.ASCII.GetString(dataBuf);
+
+                if (cmd_str.Substring(0, 4).Equals("chat") == true)
+                {
+                    string message = $"{clietnIP}:{cmd_str.Substring(5)} ";
+                    var threadParameters = new System.Threading.ThreadStart(delegate { addTo_textBox(message); });
+                    var thread2 = new System.Threading.Thread(threadParameters);
+                    thread2.Start();
+                }
+
+                _clientDictionary[clietnIP].BeginReceive(_byteBuffer, 0, _byteBuffer.Length, SocketFlags.None, new AsyncCallback(RecivedComand), _clientDictionary[clietnIP]);
+            }
         }
 
     }
