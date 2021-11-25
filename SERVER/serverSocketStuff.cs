@@ -147,9 +147,6 @@ namespace SERVER
             {
                 
                 _clientDictionary.Remove(clietnIP);
-                //5ipListBox.Items.Remove(clietnIP);
-                //RemoveTo_listBox(clietnIP);
-                //UserContrl1_LoadDataMethod(clietnIP);
                 RemoveTo_listBox(clietnIP);
                 return;
             }
