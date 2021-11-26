@@ -24,7 +24,7 @@ namespace CLIENT
         private void btn_connect_Click(object sender, EventArgs e)
         {
             btn_sendMess.Enabled = true;
-            client = new ClientSocketStuff(ref _clientSocket);// int &a
+            client = new ClientSocketStuff(ref _clientSocket, ref txtBox_serverChat);// int &a
             int foundIP = txtBox_ipBox.Text.IndexOf(":");
             //string IP = txtBox_ipBox.Text.Substring(0, foundIP);
             //string port = txtBox_ipBox.Text.Substring(foundIP+1);

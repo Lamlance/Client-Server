@@ -15,10 +15,25 @@ namespace CLIENT
         private static Socket _clientSocket;
         private static StringBuilder sb_buffer = new StringBuilder();
         private static byte[] buffer = new byte[1024];
+        private static TextBox clientMessageBox;
 
-        public ClientSocketStuff(ref Socket clientSocket)
+        public ClientSocketStuff(ref Socket clientSocket, ref TextBox MessBox)
         {
             _clientSocket = clientSocket;
+            clientMessageBox = MessBox;
+        }
+
+        private static void addTo_textBox(string str)
+        {
+            if (clientMessageBox.InvokeRequired)
+            {
+                Action safeWrite = delegate { addTo_textBox(str); };
+                clientMessageBox.Invoke(safeWrite);
+            }
+            else
+            {
+                clientMessageBox.Text += $"{str}{Environment.NewLine}";
+            }
         }
         public bool Connect(string IP, string port)
         {
@@ -39,7 +54,7 @@ namespace CLIENT
             try
             {
                 int bytesRead = _clientSocket.EndReceive(ar);
-                
+
                 byte[] dataBuf = new byte[bytesRead];
                 Array.Copy(buffer, dataBuf, bytesRead);
                 //string cmd_str = Encoding.ASCII.GetString(dataBuf);
@@ -57,7 +72,8 @@ namespace CLIENT
                     {
                         Console.WriteLine($"Builder print");
                         str = sb_buffer.ToString();
-                        Console.WriteLine($"Server:{str}");
+                        /*Console.WriteLine($"Server:{str}");*/
+                        addTo_textBox($"Server:{str}");
                     }
                 }
                 _clientSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(ReceiveCallback), sb_buffer);
@@ -71,7 +87,7 @@ namespace CLIENT
             byte[] byteData = Encoding.ASCII.GetBytes(data);
             _clientSocket.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, new AsyncCallback(SendCallback), null);
         }
-        
+
         private static void SendCallback(IAsyncResult ar)
         {
             try
