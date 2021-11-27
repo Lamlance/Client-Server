@@ -75,8 +75,8 @@ namespace CLIENT
                     {
                         Console.WriteLine($"Builder print");
                         str = sb_buffer.ToString();
-                        /*Console.WriteLine($"Server:{str}");*/
-                        addTo_textBox($"Server:{str}");
+                        addTo_textBox($"Server: {str}");
+                        sb_buffer.Length = 0;
                     }
                 }
                 _clientSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(ReceiveCallback), sb_buffer);
