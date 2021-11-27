@@ -79,7 +79,11 @@ namespace CLIENT
                 _clientSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(ReceiveCallback), sb_buffer);
 
             }
-            catch (Exception) { }
+            catch (SocketException e)
+            {
+                Console.WriteLine("Socket Exception: {0}", e);
+                addTo_textBox("Error while receiving from server, check debug log for more detail");
+            }
         }
 
         public void sendMessage(string data)
@@ -94,7 +98,11 @@ namespace CLIENT
             {
                 int bytesSent = _clientSocket.EndSend(ar);
             }
-            catch (Exception) { }
+            catch (SocketException e)
+            {
+                Console.WriteLine("Socket Exception: {0}", e);
+                addTo_textBox("Error while sending message to server, check debug log for more detail");
+            }
         }
 
 
