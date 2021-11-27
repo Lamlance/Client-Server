@@ -37,15 +37,18 @@ namespace CLIENT
         }
         public bool Connect(string IP, string port)
         {
-            try
+            if (!_clientSocket.Connected)
             {
-                _clientSocket.Connect(IPAddress.Loopback, 9000);
-                MessageBox.Show(((IPEndPoint)(_clientSocket.RemoteEndPoint)).Address.ToString());
-                _clientSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(ReceiveCallback), sb_buffer);
-            }
-            catch (Exception)
-            {
-                return false;
+                try
+                {
+                    _clientSocket.Connect(IPAddress.Loopback, 9000);
+                    MessageBox.Show(((IPEndPoint)(_clientSocket.RemoteEndPoint)).Address.ToString());
+                    _clientSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(ReceiveCallback), sb_buffer);
+                }
+                catch (SocketException)
+                {
+                    return false;
+                }
             }
             return true;
         }
@@ -88,8 +91,11 @@ namespace CLIENT
 
         public void sendMessage(string data)
         {
-            byte[] byteData = Encoding.ASCII.GetBytes(data);
-            _clientSocket.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, new AsyncCallback(SendCallback), null);
+            if (_clientSocket.Connected)
+            {
+                byte[] byteData = Encoding.ASCII.GetBytes(data);
+                _clientSocket.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, new AsyncCallback(SendCallback), null);
+            }
         }
 
         private static void SendCallback(IAsyncResult ar)
