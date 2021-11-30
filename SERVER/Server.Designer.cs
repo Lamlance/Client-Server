@@ -40,7 +40,6 @@ namespace SERVER
             this.listBox_clientIP = new System.Windows.Forms.ListBox();
             this.lbl_clientIP = new System.Windows.Forms.Label();
             this.picBox_test = new System.Windows.Forms.PictureBox();
-            this.lbl_tx1 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.picBox_test)).BeginInit();
             this.SuspendLayout();
             // 
@@ -133,21 +132,11 @@ namespace SERVER
             this.picBox_test.TabIndex = 9;
             this.picBox_test.TabStop = false;
             // 
-            // lbl_tx1
-            // 
-            this.lbl_tx1.AutoSize = true;
-            this.lbl_tx1.Location = new System.Drawing.Point(629, 413);
-            this.lbl_tx1.Name = "lbl_tx1";
-            this.lbl_tx1.Size = new System.Drawing.Size(35, 13);
-            this.lbl_tx1.TabIndex = 10;
-            this.lbl_tx1.Text = "label1";
-            // 
             // Server
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(744, 450);
-            this.Controls.Add(this.lbl_tx1);
+            this.ClientSize = new System.Drawing.Size(904, 450);
             this.Controls.Add(this.picBox_test);
             this.Controls.Add(this.lbl_clientIP);
             this.Controls.Add(this.listBox_clientIP);
@@ -179,7 +168,6 @@ namespace SERVER
         private System.Windows.Forms.ListBox listBox_clientIP;
         private System.Windows.Forms.Label lbl_clientIP;
         private System.Windows.Forms.PictureBox picBox_test;
-        private System.Windows.Forms.Label lbl_tx1;
     }
 }
 

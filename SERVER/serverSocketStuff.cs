@@ -6,26 +6,34 @@ using System.Threading.Tasks;
 using System.Net.Sockets;
 using System.Net;
 using System.Windows.Forms;
+using System.Threading;
 
 namespace SERVER
 {
+    public class ServerRecivedArgs
+    {
+        public string IP { get; set; }
+        public string cmd { get; set; }
+        public string cmd_details { get; set; }
+        public ServerRecivedArgs(string text) { IP = text; }
+    }
     public class ServerSocketStuff
     {
-        private static ListBox ipListBox;
-        private static TextBox serverMessageBox;
+        public delegate void ServerRecivedEventHandlder(ServerRecivedArgs e);
+        public static event ServerRecivedEventHandlder ServerRecivedEvent;
+        public static ManualResetEvent allDone = new ManualResetEvent(false);
+
         private static Socket _serverSocket;
         private static byte[] _byteBuffer;
 
         private static Dictionary<string,Socket> _clientDictionary =new Dictionary<string, Socket>();
 
         
-        public ServerSocketStuff(ref Socket server,ref ListBox ipList,ref TextBox MessBox)
+        public ServerSocketStuff(ref Socket server)
         {
             //_clietnSocket = new List<Socket>();
             _serverSocket = server;
             _byteBuffer = new byte[1024];//1KB
-            ipListBox = ipList;
-            serverMessageBox = MessBox;
         }
 
         public void sender(string clientAddress,string message)
@@ -54,30 +62,7 @@ namespace SERVER
             _serverSocket.BeginAccept(new AsyncCallback(AcceptCallBack), null);
         }
 
-        private static void addTo_textBox(string str)
-        {
-            if (serverMessageBox.InvokeRequired)
-            {
-                Action safeWrite = delegate { addTo_textBox(str); };
-                serverMessageBox.Invoke(safeWrite);
-            }
-            else
-            {
-                serverMessageBox.Text += $"{str}{Environment.NewLine}";
-            }
-        }
-        private static void addTo_listBox(string str)
-        {
-            if (ipListBox.InvokeRequired)
-            {
-                Action safeWrite = delegate { addTo_listBox(str); };
-                ipListBox.Invoke(safeWrite);
-            }
-            else
-            {
-                ipListBox.Items.Add(str);
-            }
-        }
+
         public static void AcceptCallBack(IAsyncResult async)
         {
             Socket socket = _serverSocket.EndAccept(async);
@@ -85,35 +70,27 @@ namespace SERVER
             string clietnIP = $"{((IPEndPoint)(socket.RemoteEndPoint)).Address}" +
                               $":{((IPEndPoint)(socket.RemoteEndPoint)).Port}";
 
-            var threadParameters = new System.Threading.ThreadStart(delegate { addTo_listBox(clietnIP); });
-            var thread2 = new System.Threading.Thread(threadParameters);
-            thread2.Start();
-
+            ServerRecivedArgs clientArgs = new ServerRecivedArgs(clietnIP);
             _clientDictionary.Add(clietnIP, socket);
-            socket.BeginReceive(_byteBuffer, 0, _byteBuffer.Length, SocketFlags.None, new AsyncCallback(RecivedComand), socket);
+            socket.BeginReceive(_byteBuffer, 0, _byteBuffer.Length, SocketFlags.None, new AsyncCallback(RecivedComand), clientArgs);
             _serverSocket.BeginAccept(new AsyncCallback(AcceptCallBack), null);
         }
 
         public static void RecivedComand(IAsyncResult async)
         {
+            ServerRecivedArgs clientArgs = (ServerRecivedArgs)async.AsyncState;
+            Socket socket = _clientDictionary[clientArgs.IP];
 
-            Socket socket = (Socket)async.AsyncState;
-            string clietnIP = $"{((IPEndPoint)(socket.RemoteEndPoint)).Address}" +
-                              $":{((IPEndPoint)(socket.RemoteEndPoint)).Port}";
             int recived = socket.EndReceive(async);
             byte[] dataBuf = new byte[recived];
             Array.Copy(_byteBuffer, dataBuf, recived);
 
             string cmd_str = Encoding.ASCII.GetString(dataBuf);
+            clientArgs.cmd = cmd_str.Substring(0, 4);
+            clientArgs.cmd_details = cmd_str.Substring(5);
+            ServerRecivedEvent?.Invoke(clientArgs);
 
-            if (cmd_str.Substring(0, 4).Equals("chat") == true)
-            {
-                string message = $"{clietnIP}:{cmd_str.Substring(5)} ";
-                var threadParameters = new System.Threading.ThreadStart(delegate { addTo_textBox(message); });
-                var thread2 = new System.Threading.Thread(threadParameters);
-                thread2.Start();
-            }
-            _clientDictionary[clietnIP].BeginReceive(_byteBuffer, 0, _byteBuffer.Length, SocketFlags.None, new AsyncCallback(RecivedComand), _clientDictionary[clietnIP]);
+            _clientDictionary[clientArgs.IP].BeginReceive(_byteBuffer, 0, _byteBuffer.Length, SocketFlags.None, new AsyncCallback(RecivedComand), clientArgs);
         }
 
     }

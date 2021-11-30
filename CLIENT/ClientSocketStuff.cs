@@ -6,14 +6,27 @@ using System.Threading.Tasks;
 using System.Net.Sockets;
 using System.Net;
 using System.Windows.Forms;
+using System.Threading;
 
 namespace CLIENT
 {
+    public class ClientRecivedArgs
+    {
+        public string Text { get; }
+        public StringBuilder sb_buffer { get; }
+        public byte[] byteBuffer { get; set; }
+        public ClientRecivedArgs() 
+        {
+            sb_buffer = new StringBuilder();
+        }
+    }
     class ClientSocketStuff
     {
-        static string str;
+        public delegate void ClientReciveddEventHandlder(ClientRecivedArgs e);
+        public static event ClientReciveddEventHandlder ClientRecivedEvent;
+        public static ManualResetEvent allDone = new ManualResetEvent(false);
+
         private static Socket _clientSocket;
-        private static StringBuilder sb_buffer = new StringBuilder();
         private static byte[] buffer = new byte[1024];
 
         public ClientSocketStuff(ref Socket clientSocket)
@@ -26,7 +39,7 @@ namespace CLIENT
             {
                 _clientSocket.Connect(IPAddress.Loopback, 9000);
                 MessageBox.Show(((IPEndPoint)(_clientSocket.RemoteEndPoint)).Address.ToString());
-                _clientSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(ReceiveCallback), sb_buffer);
+                _clientSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(ReceiveCallback), new ClientRecivedArgs());
             }
             catch (Exception)
             {
@@ -39,28 +52,24 @@ namespace CLIENT
             try
             {
                 int bytesRead = _clientSocket.EndReceive(ar);
+                ClientRecivedArgs clientRecivedArgs = (ClientRecivedArgs)ar.AsyncState;
+                clientRecivedArgs.byteBuffer = new byte[bytesRead]; 
+                Array.Copy(buffer, clientRecivedArgs.byteBuffer, bytesRead);
                 
-                byte[] dataBuf = new byte[bytesRead];
-                Array.Copy(buffer, dataBuf, bytesRead);
-                //string cmd_str = Encoding.ASCII.GetString(dataBuf);
-                //Console.WriteLine(cmd_str);
                 Console.WriteLine($"{bytesRead}");
                 if (bytesRead != 4)
                 {
-                    //Console.WriteLine($"{bytesRead}");
-                    sb_buffer.Append(Encoding.ASCII.GetString(dataBuf));
-                    //Console.WriteLine($"Builder: {sb_buffer}");
+                    clientRecivedArgs.sb_buffer.Append(Encoding.ASCII.GetString(clientRecivedArgs.byteBuffer));
                 }
                 else
                 {
-                    if (sb_buffer.Length > 1)
+                    if (clientRecivedArgs.sb_buffer.Length > 1)
                     {
-                        Console.WriteLine($"Builder print");
-                        str = sb_buffer.ToString();
-                        Console.WriteLine($"Server:{str}");
+                        ClientRecivedEvent?.Invoke(clientRecivedArgs);
                     }
+                    allDone.Set();
                 }
-                _clientSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(ReceiveCallback), sb_buffer);
+                _clientSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(ReceiveCallback), clientRecivedArgs);
 
             }
             catch (Exception) { }

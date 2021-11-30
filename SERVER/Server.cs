@@ -11,6 +11,7 @@ using System.Net;
 using System.IO;
 using System.Net.Sockets;
 using System.Threading;
+using System.Data.SqlClient;
 
 
 namespace SERVER
@@ -22,11 +23,14 @@ namespace SERVER
         {
             InitializeComponent();
         }
+        string ConnectionString;
+        SqlConnection connection;
+
         private static Socket _serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         ServerSocketStuff server1;
         private void btn_start_Click(object sender, EventArgs e)
         {
-            server1 = new ServerSocketStuff(ref _serverSocket, ref listBox_clientIP, ref txtBox_messageList);
+            server1 = new ServerSocketStuff(ref _serverSocket);
             //ThreadStart childref = new ThreadStart(ServerSocketStuff.starter);
             //Thread childThread = new Thread(childref);
             //childThread.Start();
@@ -36,9 +40,19 @@ namespace SERVER
 
         private void Server_Load(object sender, EventArgs e)
         {
-
+            ServerSocketStuff.ServerRecivedEvent += HandleServerRecived;
         }
-
+        private void HandleServerRecived(ServerRecivedArgs e)
+        {
+            if (listBox_clientIP.FindStringExact(e.IP) == ListBox.NoMatches)
+            {
+                listBox_clientIP.Items.Add(e.IP);
+            }
+            if (e.cmd.Equals("chat") == true)
+            {
+                txtBox_messageList.Text += $"{e.IP}:{e.cmd_details}{Environment.NewLine}";
+            }
+        }
         private void btn_send_Click(object sender, EventArgs e)
         {
             if (listBox_clientIP.SelectedItem != null && !string.IsNullOrEmpty(txtBox_message.Text))

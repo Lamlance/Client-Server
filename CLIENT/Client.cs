@@ -19,7 +19,7 @@ namespace CLIENT
         {
             InitializeComponent();
         }
-        ClientSocketStuff client;
+        private ClientSocketStuff client;
         private static Socket _clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         private void btn_connect_Click(object sender, EventArgs e)
         {
@@ -37,7 +37,11 @@ namespace CLIENT
                 MessageBox.Show("NO");
             }
         }
-
+        private void HandleClientRecived(ClientRecivedArgs e)
+        {
+            txtBox_serverChat.Text += $"Server:{e.sb_buffer}{Environment.NewLine}";
+            e.sb_buffer.Clear();
+        }
         private void btn_sendMess_Click(object sender, EventArgs e)
         {
             if (!string.IsNullOrEmpty(txtBox_message.Text))
@@ -54,6 +58,7 @@ namespace CLIENT
 
         private void ClientApp_Load(object sender, EventArgs e)
         {
+            ClientSocketStuff.ClientRecivedEvent += HandleClientRecived;
             btn_sendMess.Enabled = false;
         }
 
