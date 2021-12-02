@@ -20,7 +20,10 @@ namespace SERVER
     public class ServerSocketStuff
     {
         public delegate void ServerRecivedEventHandlder(ServerRecivedArgs e);
+
         public static event ServerRecivedEventHandlder ServerRecivedEvent;
+        public static event ServerRecivedEventHandlder ClientDisconnect;
+
         public static ManualResetEvent allDone = new ManualResetEvent(false);
 
         private static Socket _serverSocket;
@@ -75,23 +78,42 @@ namespace SERVER
             socket.BeginReceive(_byteBuffer, 0, _byteBuffer.Length, SocketFlags.None, new AsyncCallback(RecivedComand), clientArgs);
             _serverSocket.BeginAccept(new AsyncCallback(AcceptCallBack), null);
         }
-
+        private static bool SocketConnected(Socket s)
+        {
+            bool part1 = s.Poll(1000, SelectMode.SelectRead);
+            bool part2 = (s.Available == 0);
+            if (part1 & part2)
+                return false;
+            else
+                return true;
+        }
         public static void RecivedComand(IAsyncResult async)
         {
             ServerRecivedArgs clientArgs = (ServerRecivedArgs)async.AsyncState;
             Socket socket = _clientDictionary[clientArgs.IP];
+            if (SocketConnected(socket) == false)
+            {
 
-            int recived = socket.EndReceive(async);
-            byte[] dataBuf = new byte[recived];
-            Array.Copy(_byteBuffer, dataBuf, recived);
+                _clientDictionary.Remove(clientArgs.IP);
+                ClientDisconnect?.Invoke(clientArgs);
+                //RemoveTo_listBox(clietnIP);
+                return;
+            }else
+            {
+                int recived = socket.EndReceive(async);
+                byte[] dataBuf = new byte[recived];
+                Array.Copy(_byteBuffer, dataBuf, recived);
 
-            string cmd_str = Encoding.ASCII.GetString(dataBuf);
-            clientArgs.cmd = cmd_str.Substring(0, 4);
-            clientArgs.cmd_details = cmd_str.Substring(5);
-            ServerRecivedEvent?.Invoke(clientArgs);
+                string cmd_str = Encoding.ASCII.GetString(dataBuf);
+                clientArgs.cmd = cmd_str.Substring(0, 4);
+                clientArgs.cmd_details = cmd_str.Substring(5);
 
-            _clientDictionary[clientArgs.IP].BeginReceive(_byteBuffer, 0, _byteBuffer.Length, SocketFlags.None, new AsyncCallback(RecivedComand), clientArgs);
+                ServerRecivedEvent?.Invoke(clientArgs);
+
+                _clientDictionary[clientArgs.IP].BeginReceive(_byteBuffer, 0, _byteBuffer.Length, SocketFlags.None, new AsyncCallback(RecivedComand), clientArgs);
+            }
         }
+           
 
     }
 }

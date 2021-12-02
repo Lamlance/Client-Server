@@ -41,6 +41,12 @@ namespace SERVER
         private void Server_Load(object sender, EventArgs e)
         {
             ServerSocketStuff.ServerRecivedEvent += HandleServerRecived;
+            ServerSocketStuff.ClientDisconnect += HandleClientDisconnected;
+        }
+        private void HandleClientDisconnected(ServerRecivedArgs e)
+        {
+            listBox_clientIP.Items.Remove(e.IP);
+            txtBox_messageList.Text += $"{e.IP}:Disconnected:(( {Environment.NewLine}";
         }
         private void HandleServerRecived(ServerRecivedArgs e)
         {
