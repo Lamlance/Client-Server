@@ -7,6 +7,11 @@ using System.Net.Sockets;
 using System.Net;
 using System.Windows.Forms;
 using System.Threading;
+using System.Configuration;
+using System.Data.SqlClient;
+using System.Data;
+using System.IO;
+using System.Reflection;
 
 namespace SERVER
 {
@@ -28,9 +33,46 @@ namespace SERVER
 
         private static Socket _serverSocket;
         private static byte[] _byteBuffer;
+        string ConnectionString;
+        SqlConnection connection;
 
         private static Dictionary<string,Socket> _clientDictionary =new Dictionary<string, Socket>();
 
+        private void readPhoneBookInfo(ref DataTable PhoneBookTable)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceName = "SERVER.SqlQuery.PhoneBookInfo_query.sql";
+            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+            {
+                if (stream != null)
+                {
+                    using (StreamReader reader = new StreamReader(stream))
+                    {
+                        string PhoneBookInfo_query = reader.ReadToEnd();
+
+                        using (connection = new SqlConnection(ConnectionString))
+                        using (SqlDataAdapter adapter = new SqlDataAdapter(PhoneBookInfo_query, connection))
+                        {
+                            adapter.Fill(PhoneBookTable);
+                            return;
+                        }
+                    }
+                }
+            }
+            return;
+        }
+
+        public void getData(string cmd)
+        {
+            ConnectionString = ConfigurationManager.ConnectionStrings["SERVER.Properties.Settings.PhoneBookConnectionString"].ConnectionString;
+
+            if (cmd.Equals("info") == true)
+            {
+                DataTable PhoneBookTable = new DataTable("PhoneBookTable");
+                readPhoneBookInfo(ref PhoneBookTable);
+                PhoneBookTable.WriteXml("PhoneBookInfo.xml");
+            }
+        }
         
         public ServerSocketStuff(ref Socket server)
         {

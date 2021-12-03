@@ -13,6 +13,8 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Data.SqlClient;
 
+using System.IO;
+using System.Reflection;
 
 namespace SERVER
 {
@@ -23,18 +25,15 @@ namespace SERVER
         {
             InitializeComponent();
         }
-        string ConnectionString;
-        SqlConnection connection;
+
 
         private static Socket _serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         ServerSocketStuff server1;
         private void btn_start_Click(object sender, EventArgs e)
         {
             server1 = new ServerSocketStuff(ref _serverSocket);
-            //ThreadStart childref = new ThreadStart(ServerSocketStuff.starter);
-            //Thread childThread = new Thread(childref);
-            //childThread.Start();
             server1.starter();
+            //server1.getData("info");
             txtBox_messageList.Text += $"Server has started and is listening {Environment.NewLine}";
         }
 
@@ -57,6 +56,10 @@ namespace SERVER
             if (e.cmd.Equals("chat") == true)
             {
                 txtBox_messageList.Text += $"{e.IP}:{e.cmd_details}{Environment.NewLine}";
+            }
+            else if (e.cmd.Equals("info") == true)
+            {
+                server1.getData("info");
             }
         }
         private void btn_send_Click(object sender, EventArgs e)
