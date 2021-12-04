@@ -63,12 +63,27 @@ namespace SERVER
         {
             if (listBox_clientIP.SelectedItem != null && !string.IsNullOrEmpty(txtBox_message.Text))
             {
-                server1.sender(listBox_clientIP.SelectedItem.ToString(), txtBox_message.Text);
+                server1.sender(listBox_clientIP.SelectedItem.ToString(), txtBox_message.Text); // Gửi tin nhắn nè
                 txtBox_message.Text = string.Empty;
             }
-            Thread.Sleep(2000) ;
-            server1.sender(listBox_clientIP.SelectedItem.ToString(), "done");
+            Thread.Sleep(2000) ;// Đợi 2 giây
+            server1.sender(listBox_clientIP.SelectedItem.ToString(), "done"); // Gửi done báo hiệu đã gửi xong ok ong. mà đọc file hình là mình đọc trong folder của server 
+            //Đúng r ông thử gửi mấy cái hình đó đi cái hình 10k là cũng nhẹ nè thử gửi cái đó đi
+            // Đọc file vào stream rồi stream sang byte[] rồi gửi
+            // ok ? ok ok rồi client nó nhận nó luu vào folder của nó ông cứ lưu nó lại thì nó lưu cùng thư mục với file êxe
+            // Hiểu ko ? để tui xem lm thử. Ok v nha tăt
         }
 
+        private void btn_Pict_Click(object sender, EventArgs e)
+        {
+            byte[] buffer= server1.imageConversion("D:\\git\\Test\\Client-Server\\img1\\Banana.jpg");
+            if (listBox_clientIP.SelectedItem != null && !string.IsNullOrEmpty(txtBox_message.Text))
+            {
+                server1.sender1(listBox_clientIP.SelectedItem.ToString(), buffer); // Gửi tin nhắn nè
+                txtBox_message.Text = string.Empty;
+            }
+            Thread.Sleep(2000);// Đợi 2 giây
+            server1.sender(listBox_clientIP.SelectedItem.ToString(), "pict");
+        }
     }
 }

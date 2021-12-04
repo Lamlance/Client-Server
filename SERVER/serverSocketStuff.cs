@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.Windows.Forms;
 using System.Threading;
+using System.IO;
 
 namespace SERVER
 {
@@ -31,7 +32,7 @@ namespace SERVER
 
         private static Dictionary<string,Socket> _clientDictionary =new Dictionary<string, Socket>();
 
-        
+
         public ServerSocketStuff(ref Socket server)
         {
             //_clietnSocket = new List<Socket>();
@@ -45,6 +46,12 @@ namespace SERVER
             Socket socket = _clientDictionary[clientAddress];
             socket.BeginSend(byteData, 0, byteData.Length, SocketFlags.None,new AsyncCallback(SendCallback), socket);
         }
+        public void sender1(string clientAddress,byte[] buffer)
+        {
+            byte[] byteData = buffer;
+            Socket socket = _clientDictionary[clientAddress];
+            socket.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, new AsyncCallback(SendCallback), socket);
+        }
         private static void SendCallback(IAsyncResult ar)
         {
             try
@@ -53,9 +60,9 @@ namespace SERVER
                 Socket client = (Socket)ar.AsyncState;
                 // Complete sending the data to the remote device.  
                 int bytesSent = client.EndSend(ar);
-                Console.WriteLine($"Sent {bytesSent} bytes to client.");
+                //MessageBox.Show("Sent");
+                //Console.WriteLine($"Sent {bytesSent} bytes to client.");
             }
-
             catch (Exception) { }
         }
         public void starter()
@@ -113,7 +120,30 @@ namespace SERVER
                 _clientDictionary[clientArgs.IP].BeginReceive(_byteBuffer, 0, _byteBuffer.Length, SocketFlags.None, new AsyncCallback(RecivedComand), clientArgs);
             }
         }
-           
 
+        public  byte[] imageConversion(string imageName)
+        {
+
+
+            //Initialize a file stream to read the image file
+            FileStream fs = new FileStream(imageName, FileMode.Open, FileAccess.Read);
+
+            //Initialize a byte array with size of stream
+            byte[] imgByteArr = new byte[fs.Length];
+
+            //Read data from the file stream and put into the byte array
+            fs.Read(imgByteArr, 0, Convert.ToInt32(fs.Length));
+
+            //Close a file stream
+            fs.Close();
+
+            return imgByteArr;
+        }
+        //public byte[] imageToByteArray(System.Drawing.Image imageIn)
+        //{
+        //    MemoryStream ms = new MemoryStream();
+        //    imageIn.Save(ms, System.Drawing.Imaging.ImageFormat.Gif);
+        //    return ms.ToArray();
+        //}
     }
 }

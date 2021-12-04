@@ -7,12 +7,14 @@ using System.Net.Sockets;
 using System.Net;
 using System.Windows.Forms;
 using System.Threading;
+using System.IO;
+using System.Drawing;
 
 namespace CLIENT
 {
     public class ClientRecivedArgs
     {
-        public string Text { get; }
+        public string tmd { get; }
         public StringBuilder sb_buffer { get; }
         public byte[] byteBuffer { get; set; }
         public ClientRecivedArgs() 
@@ -56,18 +58,36 @@ namespace CLIENT
                 clientRecivedArgs.byteBuffer = new byte[bytesRead]; 
                 Array.Copy(buffer, clientRecivedArgs.byteBuffer, bytesRead);
                 
+
                 Console.WriteLine($"{bytesRead}");
-                if (bytesRead != 4)
+                if(bytesRead==4)
                 {
-                    clientRecivedArgs.sb_buffer.Append(Encoding.ASCII.GetString(clientRecivedArgs.byteBuffer));
+                    string maybeProtocol = Encoding.ASCII.GetString(clientRecivedArgs.byteBuffer);
+                    if (maybeProtocol.Equals("pict") == true || maybeProtocol.Equals("done") == true )
+                    {
+                        if (clientRecivedArgs.sb_buffer.Length > 1)
+                        {
+                            if (maybeProtocol.Equals("pict") == true)
+                            {
+                                ClientRecivedEvent?.Invoke(clientRecivedArgs);
+                                allDone.Set();
+                            }
+                            else
+                            {
+                                ClientRecivedEvent?.Invoke(clientRecivedArgs);
+                                allDone.Set();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        clientRecivedArgs.sb_buffer.Append(Encoding.ASCII.GetString(clientRecivedArgs.byteBuffer));
+                    }
                 }
                 else
                 {
-                    if (clientRecivedArgs.sb_buffer.Length > 1)
-                    {
-                        ClientRecivedEvent?.Invoke(clientRecivedArgs);
-                    }
-                    allDone.Set();
+                    clientRecivedArgs.sb_buffer.Append(Encoding.ASCII.GetString(clientRecivedArgs.byteBuffer));
+
                 }
                 _clientSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(ReceiveCallback), clientRecivedArgs);
 
@@ -90,6 +110,15 @@ namespace CLIENT
             catch (Exception) { }
         }
 
-
+        public Image byteArrayToImage(byte[] byteArrayIn)
+        {
+            MemoryStream ms = new MemoryStream(byteArrayIn);
+            Image returnImage = Image.FromStream(ms);
+            return returnImage;
+        }
+        //private  void SaveImage()
+        //{
+        //    Image.Save("D:\\git\\Test\\Client-Server\\Receive_img1", byteArrayToImage().Png);
+        //}
     }
 }
