@@ -47,7 +47,7 @@ namespace SERVER
                 txtBox_message.Text = string.Empty;
             }
             Thread.Sleep(2000) ;
-            server1.sender(listBox_clientIP.SelectedItem.ToString(), "done");
+            server1.sender2(listBox_clientIP.SelectedItem.ToString(), "done");
         }
 
     }

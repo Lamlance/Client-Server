@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,22 +16,36 @@ namespace SERVER
         private static TextBox serverMessageBox;
         private static Socket _serverSocket;
         private static byte[] _byteBuffer;
+        private static FileStream test;
+        private static Dictionary<string, Socket> _clientDictionary = new Dictionary<string, Socket>();
 
-        private static Dictionary<string,Socket> _clientDictionary =new Dictionary<string, Socket>();
 
-        
-        public ServerSocketStuff(ref Socket server,ref ListBox ipList,ref TextBox MessBox)
+        public ServerSocketStuff(ref Socket server, ref ListBox ipList, ref TextBox MessBox)
         {
             //_clietnSocket = new List<Socket>();
             _serverSocket = server;
             _byteBuffer = new byte[1024];//1KB
             ipListBox = ipList;
             serverMessageBox = MessBox;
+            test = new FileStream("COOK.xml", mode: FileMode.Open);
         }
 
-        public void sender(string clientAddress,string message)
+        public void sender(string clientAddress, string message)
         {
-            byte[] byteData = Encoding.ASCII.GetBytes(message);
+            //byte[] byteData = Encoding.ASCII.GetBytes(message);
+            //Socket socket = _clientDictionary[clientAddress];
+            //socket.BeginSend(byteData, 0, byteData.Length, SocketFlags.None,new AsyncCallback(SendCallback), socket);
+            using (MemoryStream ms = new MemoryStream())
+            {
+                test.CopyTo(ms);
+                byte[] byteData = ms.ToArray();
+                Socket socket = _clientDictionary[clientAddress];
+                socket.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, new AsyncCallback(SendCallback), socket);
+            }
+        }
+        public void sender2(string clientAddress, string message)
+        {
+            byte[] byteData = Encoding.ASCII.GetBytes("done");
             Socket socket = _clientDictionary[clientAddress];
             socket.BeginSend(byteData, 0, byteData.Length, SocketFlags.None,new AsyncCallback(SendCallback), socket);
         }

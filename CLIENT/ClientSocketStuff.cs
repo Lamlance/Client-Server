@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Data;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,6 +8,8 @@ using System.Threading.Tasks;
 using System.Net.Sockets;
 using System.Net;
 using System.Windows.Forms;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace CLIENT
 {
@@ -16,7 +20,8 @@ namespace CLIENT
         private static StringBuilder sb_buffer = new StringBuilder();
         private static byte[] buffer = new byte[1024];
         private static TextBox clientMessageBox;
-
+        private static Stream XMLStream = new MemoryStream();
+        private static DataTable test = new DataTable();
         public ClientSocketStuff(ref Socket clientSocket, ref TextBox MessBox)
         {
             _clientSocket = clientSocket;
@@ -66,18 +71,30 @@ namespace CLIENT
                 if (bytesRead != 4)
                 {
                     //Console.WriteLine($"{bytesRead}");
-                    sb_buffer.Append(Encoding.ASCII.GetString(dataBuf));
+                    //sb_buffer.Append(Encoding.ASCII.GetString(dataBuf));
                     //Console.WriteLine($"Builder: {sb_buffer}");
+                    XMLStream.Write(dataBuf, 0, bytesRead);
                 }
                 else
                 {
-                    if (sb_buffer.Length > 1)
+                    //if (sb_buffer.Length > 1)
+                    //{
+                    // Console.WriteLine($"Builder print");
+                    // str = sb_buffer.ToString();
+                    // addTo_textBox($"Server: {str}");
+                    // sb_buffer.Length = 0;
+                    //}
+                    XMLStream.Seek(0, SeekOrigin.Begin);
+                    /*using (Stream file = File.Create("test.xml"))
                     {
-                        Console.WriteLine($"Builder print");
-                        str = sb_buffer.ToString();
-                        addTo_textBox($"Server: {str}");
-                        sb_buffer.Length = 0;
+                        XMLStream.CopyTo(file);
+                        file.Close();
+                    }*/
+                    using (StreamReader sr = new StreamReader(XMLStream))
+                    {
+                        test.ReadXml(sr);
                     }
+                    XMLStream.SetLength(0);
                 }
                 _clientSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(ReceiveCallback), sb_buffer);
 
