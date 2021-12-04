@@ -36,6 +36,8 @@ namespace CLIENT
             this.txtBox_message = new System.Windows.Forms.TextBox();
             this.lbl_messBox = new System.Windows.Forms.Label();
             this.btn_sendMess = new System.Windows.Forms.Button();
+            this.picBox_test = new System.Windows.Forms.PictureBox();
+            ((System.ComponentModel.ISupportInitialize)(this.picBox_test)).BeginInit();
             this.SuspendLayout();
             // 
             // lbl_serverIp
@@ -100,11 +102,21 @@ namespace CLIENT
             this.btn_sendMess.UseVisualStyleBackColor = true;
             this.btn_sendMess.Click += new System.EventHandler(this.btn_sendMess_Click);
             // 
+            // picBox_test
+            // 
+            this.picBox_test.Location = new System.Drawing.Point(452, 44);
+            this.picBox_test.Name = "picBox_test";
+            this.picBox_test.Size = new System.Drawing.Size(274, 231);
+            this.picBox_test.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.picBox_test.TabIndex = 7;
+            this.picBox_test.TabStop = false;
+            // 
             // ClientApp
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(445, 323);
+            this.ClientSize = new System.Drawing.Size(819, 323);
+            this.Controls.Add(this.picBox_test);
             this.Controls.Add(this.btn_sendMess);
             this.Controls.Add(this.txtBox_message);
             this.Controls.Add(this.lbl_messBox);
@@ -115,6 +127,7 @@ namespace CLIENT
             this.Name = "ClientApp";
             this.Text = "Client";
             this.Load += new System.EventHandler(this.ClientApp_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.picBox_test)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -129,6 +142,7 @@ namespace CLIENT
         private System.Windows.Forms.TextBox txtBox_message;
         private System.Windows.Forms.Label lbl_messBox;
         private System.Windows.Forms.Button btn_sendMess;
+        private System.Windows.Forms.PictureBox picBox_test;
     }
 }
 

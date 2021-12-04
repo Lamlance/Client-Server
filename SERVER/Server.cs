@@ -61,6 +61,13 @@ namespace SERVER
             {
                 server1.getData("info");
             }
+            else if (e.cmd.Equals("pict") == true)
+            {
+                MessageBox.Show("Se gui hinh");
+                server1.imageConversion(@"D:\CLASS\DaiHock\DaiHoc\Dumb\Client-Server\img1\Banana.jpg",$"{e.IP}");
+                Thread.Sleep(5000);
+                server1.sender(e.IP, "pict");
+            }
         }
         private void btn_send_Click(object sender, EventArgs e)
         {
@@ -79,14 +86,14 @@ namespace SERVER
 
         private void btn_Pict_Click(object sender, EventArgs e)
         {
-            byte[] buffer= server1.imageConversion("D:\\git\\Test\\Client-Server\\img1\\Banana.jpg");
-            if (listBox_clientIP.SelectedItem != null && !string.IsNullOrEmpty(txtBox_message.Text))
-            {
-                server1.sender1(listBox_clientIP.SelectedItem.ToString(), buffer); // Gửi tin nhắn nè
-                txtBox_message.Text = string.Empty;
-            }
-            Thread.Sleep(2000);// Đợi 2 giây
-            server1.sender(listBox_clientIP.SelectedItem.ToString(), "pict");
+            //byte[] buffer= server1.imageConversion("D:\\git\\Test\\Client-Server\\img1\\Banana.jpg","");
+            //if (listBox_clientIP.SelectedItem != null && !string.IsNullOrEmpty(txtBox_message.Text))
+            //{
+            //    server1.sender1(listBox_clientIP.SelectedItem.ToString(), buffer); // Gửi tin nhắn nè
+            //    txtBox_message.Text = string.Empty;
+            //}
+            //Thread.Sleep(2000);// Đợi 2 giây
+            //server1.sender(listBox_clientIP.SelectedItem.ToString(), "pict");
         }
     }
 }

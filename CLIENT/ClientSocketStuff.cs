@@ -14,11 +14,13 @@ namespace CLIENT
 {
     public class ClientRecivedArgs
     {
-        public string tmd { get; }
+        public string cmd { get; set; }
         public StringBuilder sb_buffer { get; }
         public byte[] byteBuffer { get; set; }
+        public MemoryStream sw { get; set; }
         public ClientRecivedArgs() 
         {
+            sw = new MemoryStream();
             sb_buffer = new StringBuilder();
         }
     }
@@ -65,29 +67,23 @@ namespace CLIENT
                     string maybeProtocol = Encoding.ASCII.GetString(clientRecivedArgs.byteBuffer);
                     if (maybeProtocol.Equals("pict") == true || maybeProtocol.Equals("done") == true )
                     {
+                        clientRecivedArgs.cmd = maybeProtocol;
                         if (clientRecivedArgs.sb_buffer.Length > 1)
                         {
-                            if (maybeProtocol.Equals("pict") == true)
-                            {
-                                ClientRecivedEvent?.Invoke(clientRecivedArgs);
-                                allDone.Set();
-                            }
-                            else
-                            {
-                                ClientRecivedEvent?.Invoke(clientRecivedArgs);
-                                allDone.Set();
-                            }
+                            ClientRecivedEvent?.Invoke(clientRecivedArgs);
+                            allDone.Set();
                         }
                     }
                     else
                     {
+                        clientRecivedArgs.sw.Write(clientRecivedArgs.byteBuffer, 0, clientRecivedArgs.byteBuffer.Length);
                         clientRecivedArgs.sb_buffer.Append(Encoding.ASCII.GetString(clientRecivedArgs.byteBuffer));
                     }
                 }
                 else
                 {
+                    clientRecivedArgs.sw.Write(clientRecivedArgs.byteBuffer, 0, clientRecivedArgs.byteBuffer.Length);
                     clientRecivedArgs.sb_buffer.Append(Encoding.ASCII.GetString(clientRecivedArgs.byteBuffer));
-
                 }
                 _clientSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(ReceiveCallback), clientRecivedArgs);
 

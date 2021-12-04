@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.Net.Sockets;
 using System.Net;
 using System.Threading;
+using System.IO;
 
 namespace CLIENT
 {
@@ -39,16 +40,41 @@ namespace CLIENT
         }
         private void HandleClientRecived(ClientRecivedArgs e)
         {
-            txtBox_serverChat.Text += $"Server:{e.sb_buffer}{Environment.NewLine}";
+            if (e.cmd.Equals("done") == true)
+            {
+                txtBox_serverChat.Text += $"Server:{e.sb_buffer}{Environment.NewLine}";
+            }else if(e.cmd.Equals("pict") == true)
+            {
+                txtBox_serverChat.Text += $"Da nhan dc hinh {Environment.NewLine}";
+                txtBox_serverChat.Text += $"Nhan dc {e.sb_buffer.Length} {Environment.NewLine}";
+
+                e.sw.Seek(0, SeekOrigin.Begin);
+                using (Stream file = File.Create(@"D:\CLASS\DaiHock\DaiHoc\Dumb\Client-Server\b3.jpg"))
+                {
+                    e.sw.CopyTo(file);
+                    file.Close();
+                }
+            }
             e.sb_buffer.Clear();
         }
         private void btn_sendMess_Click(object sender, EventArgs e)
         {
+            //txtBox_message.Text, pict ? hỏi hình
+            // thông tin chi tiet xml + hình
+            // detl ==> server biet su dung sql ==> dataTable [Số][Tên][CV][CT][NOTE] 
+            //                                                  *   *    x   x    x
+            //  Đường dẫn hình => gửi hình
             if (!string.IsNullOrEmpty(txtBox_message.Text))
             {
-                string message = "chat*" + txtBox_message.Text;
-                while (!string.IsNullOrEmpty(txtBox_message.Text))
+                if (txtBox_message.Text.Equals("pict"))
                 {
+                    string message = "pict*abc";
+                    client.sendMessage(message);
+                    txtBox_message.Text = string.Empty;
+                }
+                else
+                {
+                    string message = "chat*" + txtBox_message.Text;
                     client.sendMessage(message);
                     txtBox_message.Text = string.Empty;
                 }

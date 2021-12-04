@@ -163,7 +163,7 @@ namespace SERVER
             }
         }
 
-        public  byte[] imageConversion(string imageName)
+        public  void imageConversion(string imageName,string IP)
         {
 
 
@@ -178,8 +178,7 @@ namespace SERVER
 
             //Close a file stream
             fs.Close();
-
-            return imgByteArr;
+            _clientDictionary[IP].BeginSend(imgByteArr, 0, imgByteArr.Length, SocketFlags.None, new AsyncCallback(SendCallback), _clientDictionary[IP]);
         }
         //public byte[] imageToByteArray(System.Drawing.Image imageIn)
         //{
