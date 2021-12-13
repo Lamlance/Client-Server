@@ -11,8 +11,11 @@ using System.IO;
 using System.Configuration;
 using System.Data.SqlClient;
 using System.Data;
-using System.IO;
 using System.Reflection;
+using System.Resources;
+using System.Drawing;
+using System.Collections;
+using System.Globalization;
 
 namespace SERVER
 {
@@ -22,15 +25,29 @@ namespace SERVER
         public string cmd { get; set; }
         public string cmd_details { get; set; }
         public ServerRecivedArgs(string text) { IP = text; }
+        public ServerRecivedArgs(ServerRecivedArgs obj)
+        {
+            cmd = obj.cmd;
+            IP = obj.IP;
+            cmd_details = obj.cmd_details;
+        }
+        public void reset()
+        {
+            cmd = string.Empty;
+            IP = string.Empty;
+            cmd_details = string.Empty;
+
+        }
     }
     public class ServerSocketStuff
     {
         public delegate void ServerRecivedEventHandlder(ServerRecivedArgs e);
 
         public static event ServerRecivedEventHandlder ServerRecivedEvent;
+        public static event ServerRecivedEventHandlder ClientConnected;
         public static event ServerRecivedEventHandlder ClientDisconnect;
 
-        public static ManualResetEvent allDone = new ManualResetEvent(false);
+        public static ManualResetEvent manualResetEvent = new ManualResetEvent(false);
 
         private static Socket _serverSocket;
         private static byte[] _byteBuffer;
@@ -39,10 +56,20 @@ namespace SERVER
 
         private static Dictionary<string,Socket> _clientDictionary =new Dictionary<string, Socket>();
       
-        private void readPhoneBookInfo(ref DataTable PhoneBookTable)
+        private void readPhoneBookInfo(ref DataTable PhoneBookTable,bool isDetail,string detail = "")
         {
             var assembly = Assembly.GetExecutingAssembly();
-            var resourceName = "SERVER.SqlQuery.PhoneBookInfo_query.sql";
+            string resourceName;
+
+            if (isDetail)
+            {
+                resourceName = $"SERVER.SqlQuery.DetailSearch_query.sql";
+            }
+            else
+            {
+                resourceName = $"SERVER.SqlQuery.PhoneBookInfo_query.sql";
+            }
+
             using (Stream stream = assembly.GetManifestResourceStream(resourceName))
             {
                 if (stream != null)
@@ -52,7 +79,7 @@ namespace SERVER
                         string PhoneBookInfo_query = reader.ReadToEnd();
 
                         using (connection = new SqlConnection(ConnectionString))
-                        using (SqlDataAdapter adapter = new SqlDataAdapter(PhoneBookInfo_query, connection))
+                        using (SqlDataAdapter adapter = new SqlDataAdapter(PhoneBookInfo_query+ detail, connection))
                         {
                             adapter.Fill(PhoneBookTable);
                             return;
@@ -63,16 +90,24 @@ namespace SERVER
             return;
         }
 
-        public void getData(string cmd)
+        public string getData(string cmd,ref DataTable PhoneBookTable,string detail = "")
         {
             ConnectionString = ConfigurationManager.ConnectionStrings["SERVER.Properties.Settings.PhoneBookConnectionString"].ConnectionString;
 
-            if (cmd.Equals("info") == true)
+            switch (cmd)
             {
-                DataTable PhoneBookTable = new DataTable("PhoneBookTable");
-                readPhoneBookInfo(ref PhoneBookTable);
-                PhoneBookTable.WriteXml("PhoneBookInfo.xml");
+                case "info":
+                    readPhoneBookInfo(ref PhoneBookTable, false);
+                    PhoneBookTable.WriteXml("PhoneBookInfo.xml", XmlWriteMode.WriteSchema);
+                    return "PhoneBookInfo.xml";
+                case "detl":
+                    readPhoneBookInfo(ref PhoneBookTable, true, detail);
+                    PhoneBookTable.WriteXml("Details.xml", XmlWriteMode.WriteSchema);
+                    return "Details.xml";
+                default:
+                    break;
             }
+            return String.Empty;
         }
         
         public ServerSocketStuff(ref Socket server)
@@ -82,28 +117,23 @@ namespace SERVER
             _byteBuffer = new byte[1024];//1KB
         }
 
-        public void sender(string clientAddress,string message)
+        public async Task<bool> sender(string clientAddress,string message)
         {
             byte[] byteData = Encoding.ASCII.GetBytes(message);
             Socket socket = _clientDictionary[clientAddress];
-            socket.BeginSend(byteData, 0, byteData.Length, SocketFlags.None,new AsyncCallback(SendCallback), socket);
+            IAsyncResult result = socket.BeginSend(byteData, 0, byteData.Length, SocketFlags.None,new AsyncCallback(SendCallback), socket);
+
+            await Task.Delay(2000);
+
+            return true;
         }
-        public void sender1(string clientAddress,byte[] buffer)
-        {
-            byte[] byteData = buffer;
-            Socket socket = _clientDictionary[clientAddress];
-            socket.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, new AsyncCallback(SendCallback), socket);
-        }
+
         private static void SendCallback(IAsyncResult ar)
         {
             try
             {
-                // Retrieve the socket from the state object.  
                 Socket client = (Socket)ar.AsyncState;
-                // Complete sending the data to the remote device.  
                 int bytesSent = client.EndSend(ar);
-                //MessageBox.Show("Sent");
-                //Console.WriteLine($"Sent {bytesSent} bytes to client.");
             }
             catch (Exception) { }
         }
@@ -123,6 +153,8 @@ namespace SERVER
                               $":{((IPEndPoint)(socket.RemoteEndPoint)).Port}";
 
             ServerRecivedArgs clientArgs = new ServerRecivedArgs(clietnIP);
+            ClientConnected.Invoke(clientArgs);
+
             _clientDictionary.Add(clietnIP, socket);
             socket.BeginReceive(_byteBuffer, 0, _byteBuffer.Length, SocketFlags.None, new AsyncCallback(RecivedComand), clientArgs);
             _serverSocket.BeginAccept(new AsyncCallback(AcceptCallBack), null);
@@ -145,7 +177,6 @@ namespace SERVER
 
                 _clientDictionary.Remove(clientArgs.IP);
                 ClientDisconnect?.Invoke(clientArgs);
-                //RemoveTo_listBox(clietnIP);
                 return;
             }else
             {
@@ -157,34 +188,81 @@ namespace SERVER
                 clientArgs.cmd = cmd_str.Substring(0, 4);
                 clientArgs.cmd_details = cmd_str.Substring(5);
 
-                ServerRecivedEvent?.Invoke(clientArgs);
+                ServerRecivedEvent?.Invoke(new ServerRecivedArgs(clientArgs));
 
-                _clientDictionary[clientArgs.IP].BeginReceive(_byteBuffer, 0, _byteBuffer.Length, SocketFlags.None, new AsyncCallback(RecivedComand), clientArgs);
+                _clientDictionary[clientArgs.IP].BeginReceive(_byteBuffer, 0, _byteBuffer.Length, SocketFlags.None, new AsyncCallback(RecivedComand), new ServerRecivedArgs(clientArgs.IP));
             }
         }
 
-        public  void imageConversion(string imageName,string IP)
+
+
+        public async Task<bool> imageConversion(string imageName,string IP)
+        {
+            //Initialize a file stream to read the image file
+            FileStream fs = new FileStream($"PhoneBookAvatar\\{imageName}", FileMode.Open, FileAccess.Read);
+
+            string img = imageName;
+
+            if (img.Length < 52)
+            {
+                img += new string('\0', 52 - img.Length);
+            }
+
+            byte[] byteArr = Encoding.ASCII.GetBytes(img);
+            MemoryStream memory = new MemoryStream();
+            memory.Write(byteArr, 0, byteArr.Length);
+
+            fs.Seek(0, SeekOrigin.Begin);
+            fs.CopyTo(memory);
+
+            memory.Seek(0, SeekOrigin.Begin);
+            byteArr = new byte[memory.Length];
+            memory.Read(byteArr, 0, Convert.ToInt32(memory.Length) );
+
+            IAsyncResult asyncResult = _clientDictionary[IP].BeginSend(byteArr, 0, byteArr.Length, SocketFlags.None, 
+                new AsyncCallback(SendCallback), _clientDictionary[IP]);
+
+            await Task.Delay(5000);
+
+            var SendTask = await sender(IP, "pict");
+            return true;
+        }
+
+        public async void xmlsConversion(string cmd, string IP,string detail = "")
         {
 
+            DataTable PhoneBookTable = new DataTable("PhoneBookTable");
+            string xmlName = getData(cmd,ref PhoneBookTable, detail);
 
-            //Initialize a file stream to read the image file
-            FileStream fs = new FileStream(imageName, FileMode.Open, FileAccess.Read);
+            List<string> AvatarNameList = new List<string>() ;
+            foreach (DataRow item in PhoneBookTable.Rows)
+            {
+                string AvatarName = item["AvatarPath"].ToString();
+                if (!String.IsNullOrEmpty(AvatarName))
+                {
+                    AvatarNameList.Add(item["AvatarPath"].ToString());
+                }
+            }
 
-            //Initialize a byte array with size of stream
-            byte[] imgByteArr = new byte[fs.Length];
-
-            //Read data from the file stream and put into the byte array
-            fs.Read(imgByteArr, 0, Convert.ToInt32(fs.Length));
-
-            //Close a file stream
+            FileStream fs = new FileStream(xmlName, FileMode.Open, FileAccess.Read);
+            byte[] xmlByteArr = new byte[fs.Length];
+            fs.Read(xmlByteArr, 0, Convert.ToInt32(fs.Length));
             fs.Close();
-            _clientDictionary[IP].BeginSend(imgByteArr, 0, imgByteArr.Length, SocketFlags.None, new AsyncCallback(SendCallback), _clientDictionary[IP]);
+
+            IAsyncResult result = _clientDictionary[IP].BeginSend(xmlByteArr, 0, xmlByteArr.Length, SocketFlags.None, 
+                new AsyncCallback(SendCallback), _clientDictionary[IP]);
+
+
+            Thread.Sleep(5000);
+
+            var SendTask = await sender(IP, "xmls");
+
+
+            List<string> Distict_AvatarNameList = AvatarNameList.Distinct().ToList();
+            foreach (string item in Distict_AvatarNameList)
+            {
+                var ImageTask = await imageConversion(item, IP);
+            }
         }
-        //public byte[] imageToByteArray(System.Drawing.Image imageIn)
-        //{
-        //    MemoryStream ms = new MemoryStream();
-        //    imageIn.Save(ms, System.Drawing.Imaging.ImageFormat.Gif);
-        //    return ms.ToArray();
-        //}
     }
 }

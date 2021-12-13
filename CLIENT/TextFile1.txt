@@ -67,3 +67,58 @@
             }
         }
     }
+
+
+                if (e.cmd.Equals("chat") == true)
+            {
+                txtBox_serverChat.Text += $"Server:{e.sb_buffer}{Environment.NewLine}";
+            }
+            else if (e.cmd.Equals("pict") == true)
+            {
+                e.sw.Seek(0, SeekOrigin.Begin);
+
+                Directory.CreateDirectory("SavedAvatar");
+
+                byte[] nameByteArr = new byte[53];
+                e.sw.Read(nameByteArr, 0, 52);
+                string imageName = Encoding.ASCII.GetString(nameByteArr);
+
+                string invalid = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
+                txtBox_serverChat.Text += $@"SavedAvatar\{imageName}{Environment.NewLine}";
+                foreach (char c in invalid)
+                {
+                    imageName = imageName.Replace(c.ToString(), "");
+                }
+
+                try
+                {
+                    e.sw.Seek(0, SeekOrigin.Begin);
+                    using (Stream file = File.Create(@"SavedAvatar\" + imageName))
+                    {
+                        e.sw.Seek(52, SeekOrigin.Begin);
+                        e.sw.CopyTo(file);
+                        file.Close();
+                    }
+                }
+                catch (Exception exception)
+                {
+                    textBox_log.Text += $"{exception.Message} {Environment.NewLine}";
+                }
+                using (Stream stream = File.OpenRead(@"SavedAvatar\" + imageName))
+                {
+                    Image avatar = Image.FromStream(stream);
+                    pictureBox_avatar.Image = avatar;
+                }
+            }
+            else if (e.cmd.Equals("xmls") == true)
+            {
+                txtBox_serverChat.Text += $"Da nhan dc xmls {Environment.NewLine}";
+
+                e.sw.Seek(0, SeekOrigin.Begin);
+                using (Stream file = File.Create(@"info.xml", 1024))
+                {
+                    file.Seek(0, SeekOrigin.Begin);
+                    e.sw.CopyTo(file);
+                    file.Close();
+                }
+            }

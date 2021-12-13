@@ -1,0 +1,9 @@
+<?xml version="1.0" standalone="yes"?>
+<DocumentElement>
+  <PhoneBookTable>
+    <Serial_Number>1995</Serial_Number>
+    <Full_Name>Hoang Lam</Full_Name>
+    <Phone_Number>9093737</Phone_Number>
+    <Email>lamhoang@email.com</Email>
+  </PhoneBookTable>
+</DocumentElement>

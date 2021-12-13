@@ -15,21 +15,32 @@ namespace CLIENT
     public class ClientRecivedArgs
     {
         public string cmd { get; set; }
-        public StringBuilder sb_buffer { get; }
         public byte[] byteBuffer { get; set; }
         public MemoryStream sw { get; set; }
         public ClientRecivedArgs() 
         {
             sw = new MemoryStream();
-            sb_buffer = new StringBuilder();
         }
+        public ClientRecivedArgs(ClientRecivedArgs obj)
+        {
+            sw = new MemoryStream();
+            obj.sw.Seek(0, SeekOrigin.Begin);
+            obj.sw.CopyTo(sw);
+            cmd = obj.cmd;
+        }
+        public void Reset()
+        {
+            sw = new MemoryStream();
+            sw.Seek(0, SeekOrigin.Begin);
+        }
+
     }
     class ClientSocketStuff
     {
         public delegate void ClientReciveddEventHandlder(ClientRecivedArgs e);
         public static event ClientReciveddEventHandlder ClientRecivedEvent;
         public static ManualResetEvent allDone = new ManualResetEvent(false);
-
+        private static ClientRecivedArgs clientRecivedArgsGOBAL = new ClientRecivedArgs();
         private static Socket _clientSocket;
         private static byte[] buffer = new byte[1024];
 
@@ -43,7 +54,7 @@ namespace CLIENT
             {
                 _clientSocket.Connect(IPAddress.Loopback, 9000);
                 MessageBox.Show(((IPEndPoint)(_clientSocket.RemoteEndPoint)).Address.ToString());
-                _clientSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(ReceiveCallback), new ClientRecivedArgs());
+                _clientSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(ReceiveCallback), clientRecivedArgsGOBAL);
             }
             catch (Exception)
             {
@@ -51,44 +62,75 @@ namespace CLIENT
             }
             return true;
         }
-        private static void ReceiveCallback(IAsyncResult ar)
+
+        private static async Task<ClientRecivedArgs> CopyGlobalArgument()
+        {
+            ClientRecivedArgs copy = new ClientRecivedArgs(clientRecivedArgsGOBAL);
+            //await Task.Delay(3000);
+            return copy;
+        }
+
+        private static void EndAsyncEvent(IAsyncResult iar)
+        {
+           //var ar = (System.Runtime.Remoting.Messaging.AsyncResult)iar;
+           //var invokedMethod = (ClientReciveddEventHandlder)iar.AsyncState;
+
+            try
+            {
+                clientRecivedArgsGOBAL.Reset();
+                ClientRecivedEvent.EndInvoke(iar);
+            }
+            catch
+            {
+                // Handle any exceptions that were thrown by the invoked method
+                MessageBox.Show("An event listener went kaboom!");
+            }
+        }
+
+        private static async void ReceiveCallback(IAsyncResult ar)
         {
             try
             {
                 int bytesRead = _clientSocket.EndReceive(ar);
-                ClientRecivedArgs clientRecivedArgs = (ClientRecivedArgs)ar.AsyncState;
-                clientRecivedArgs.byteBuffer = new byte[bytesRead]; 
-                Array.Copy(buffer, clientRecivedArgs.byteBuffer, bytesRead);
-                
+                //ClientRecivedArgs clientRecivedArgs = (ClientRecivedArgs)ar.AsyncState;
+                clientRecivedArgsGOBAL.byteBuffer = new byte[bytesRead]; 
+                Array.Copy(buffer, clientRecivedArgsGOBAL.byteBuffer, bytesRead);
 
                 Console.WriteLine($"{bytesRead}");
                 if(bytesRead==4)
                 {
-                    string maybeProtocol = Encoding.ASCII.GetString(clientRecivedArgs.byteBuffer);
-                    if (maybeProtocol.Equals("pict") == true || maybeProtocol.Equals("done") == true )
+                    string maybeProtocol = Encoding.ASCII.GetString(clientRecivedArgsGOBAL.byteBuffer);
+                    if (maybeProtocol.Equals("pict") == true 
+                        || maybeProtocol.Equals("chat") == true 
+                        || maybeProtocol.Equals("xmls") == true
+                        || maybeProtocol.Equals("done") == true
+                        )
                     {
-                        clientRecivedArgs.cmd = maybeProtocol;
-                        if (clientRecivedArgs.sb_buffer.Length > 1)
-                        {
-                            ClientRecivedEvent?.Invoke(clientRecivedArgs);
-                            allDone.Set();
-                        }
+                        clientRecivedArgsGOBAL.cmd = maybeProtocol;
+                        var CopyTask = CopyGlobalArgument();
+                        var CopyResult = await CopyTask;
+
+                        ClientRecivedEvent.BeginInvoke(CopyResult,new AsyncCallback(EndAsyncEvent), null);
+                        //ClientRecivedEvent.Invoke(CopyResult);
+                        //clientRecivedArgsGOBAL.Reset();
+
                     }
                     else
                     {
-                        clientRecivedArgs.sw.Write(clientRecivedArgs.byteBuffer, 0, clientRecivedArgs.byteBuffer.Length);
-                        clientRecivedArgs.sb_buffer.Append(Encoding.ASCII.GetString(clientRecivedArgs.byteBuffer));
+                        clientRecivedArgsGOBAL.sw.Write(clientRecivedArgsGOBAL.byteBuffer, 0, clientRecivedArgsGOBAL.byteBuffer.Length);
                     }
                 }
-                else
+                else if(bytesRead > 0)
                 {
-                    clientRecivedArgs.sw.Write(clientRecivedArgs.byteBuffer, 0, clientRecivedArgs.byteBuffer.Length);
-                    clientRecivedArgs.sb_buffer.Append(Encoding.ASCII.GetString(clientRecivedArgs.byteBuffer));
+                    clientRecivedArgsGOBAL.sw.Write(clientRecivedArgsGOBAL.byteBuffer, 0, clientRecivedArgsGOBAL.byteBuffer.Length);
                 }
-                _clientSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(ReceiveCallback), clientRecivedArgs);
+                _clientSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(ReceiveCallback), null);
 
             }
-            catch (Exception) { }
+            catch (Exception e) 
+            {
+                Console.WriteLine(e.Message);
+            }
         }
 
         public void sendMessage(string data)

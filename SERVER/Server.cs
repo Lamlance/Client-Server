@@ -12,8 +12,6 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Data.SqlClient;
-
-using System.IO;
 using System.Reflection;
 
 namespace SERVER
@@ -41,32 +39,90 @@ namespace SERVER
         {
             ServerSocketStuff.ServerRecivedEvent += HandleServerRecived;
             ServerSocketStuff.ClientDisconnect += HandleClientDisconnected;
+            ServerSocketStuff.ClientConnected += HandleClientConnected;
         }
-        private void HandleClientDisconnected(ServerRecivedArgs e)
+
+        private delegate void addStringCallBack(string message,bool isRemove = false);
+        private void EndAsync(IAsyncResult async)
         {
-            listBox_clientIP.Items.Remove(e.IP);
-            txtBox_messageList.Text += $"{e.IP}:Disconnected:(( {Environment.NewLine}";
+            addStringCallBack callback = (addStringCallBack)async.AsyncState;
+            callback.EndInvoke(async);
         }
-        private void HandleServerRecived(ServerRecivedArgs e)
+        private void AddStringTo_messageList(string message, bool isRemove = false)
         {
-            if (listBox_clientIP.FindStringExact(e.IP) == ListBox.NoMatches)
+            txtBox_messageList.Text += $"{message}{Environment.NewLine}";
+        }
+        private void AddRemove_listBox(string message, bool isRemove = false)
+        {
+            if (isRemove)
+            {
+                listBox_clientIP.Items.Remove(message);
+            }
+            else
+            {
+                listBox_clientIP.Items.Add(message);
+            }
+        }
+
+
+        private void HandleClientConnected(ServerRecivedArgs e)
+        {
+            if (listBox_clientIP.InvokeRequired || txtBox_messageList.InvokeRequired)
+            {
+                var action = new addStringCallBack(AddRemove_listBox);
+                action.BeginInvoke(e.IP,false, EndAsync, action);
+
+                action = new addStringCallBack(AddStringTo_messageList);
+                action.BeginInvoke($"{e.IP} has connected", false, EndAsync, action);
+
+            }
+            else
             {
                 listBox_clientIP.Items.Add(e.IP);
+                txtBox_messageList.Text += $"{e.IP} has connected {Environment.NewLine}";
             }
-            if (e.cmd.Equals("chat") == true)
+        }
+
+        private void HandleClientDisconnected(ServerRecivedArgs e)
+        {
+            if (listBox_clientIP.InvokeRequired || txtBox_messageList.InvokeRequired)
             {
-                txtBox_messageList.Text += $"{e.IP}:{e.cmd_details}{Environment.NewLine}";
+                var action = new addStringCallBack(AddRemove_listBox);
+                action.BeginInvoke(e.IP, true, EndAsync, action);
+
+                action = new addStringCallBack(AddStringTo_messageList);
+                action.BeginInvoke($"{e.IP} has disconnected", false, EndAsync, action);
+
             }
-            else if (e.cmd.Equals("info") == true)
+            else
             {
-                server1.getData("info");
+                listBox_clientIP.Items.Remove(e.IP);
+                txtBox_messageList.Text += $"{e.IP} has disconnected {Environment.NewLine}";
             }
-            else if (e.cmd.Equals("pict") == true)
+            //listBox_clientIP.Items.Remove(e.IP);
+            //txtBox_messageList.Text += $"{e.IP}:Disconnected:(( {Environment.NewLine}";
+        }
+        private async void HandleServerRecived(ServerRecivedArgs e)
+        {
+            switch (e.cmd)
             {
-                MessageBox.Show("Se gui hinh");
-                server1.imageConversion(@"D:\CLASS\DaiHock\DaiHoc\Dumb\Client-Server\img1\Banana.jpg",$"{e.IP}");
-                Thread.Sleep(5000);
-                server1.sender(e.IP, "pict");
+                case "chat":
+                    txtBox_messageList.Text += $"{e.IP}:{e.cmd_details}{Environment.NewLine}";
+                    break;
+                case "pict":
+                    await server1.imageConversion("2344.jpg", $"{e.IP}");
+                    //Thread.Sleep(5000);
+                    await server1.sender(e.IP, "pict");
+                    break;
+                case "info":
+                    server1.xmlsConversion(e.cmd, e.IP);
+                    //server1.sender(e.IP, "xmls");
+                    break;
+                case "detl":
+                    server1.xmlsConversion(e.cmd, e.IP,e.cmd_details);
+                    break;
+                default:
+                    break;
             }
         }
         private void btn_send_Click(object sender, EventArgs e)
@@ -76,24 +132,8 @@ namespace SERVER
                 server1.sender(listBox_clientIP.SelectedItem.ToString(), txtBox_message.Text); // Gửi tin nhắn nè
                 txtBox_message.Text = string.Empty;
             }
-            Thread.Sleep(2000) ;// Đợi 2 giây
-            server1.sender(listBox_clientIP.SelectedItem.ToString(), "done"); // Gửi done báo hiệu đã gửi xong ok ong. mà đọc file hình là mình đọc trong folder của server 
-            //Đúng r ông thử gửi mấy cái hình đó đi cái hình 10k là cũng nhẹ nè thử gửi cái đó đi
-            // Đọc file vào stream rồi stream sang byte[] rồi gửi
-            // ok ? ok ok rồi client nó nhận nó luu vào folder của nó ông cứ lưu nó lại thì nó lưu cùng thư mục với file êxe
-            // Hiểu ko ? để tui xem lm thử. Ok v nha tăt
-        }
-
-        private void btn_Pict_Click(object sender, EventArgs e)
-        {
-            //byte[] buffer= server1.imageConversion("D:\\git\\Test\\Client-Server\\img1\\Banana.jpg","");
-            //if (listBox_clientIP.SelectedItem != null && !string.IsNullOrEmpty(txtBox_message.Text))
-            //{
-            //    server1.sender1(listBox_clientIP.SelectedItem.ToString(), buffer); // Gửi tin nhắn nè
-            //    txtBox_message.Text = string.Empty;
-            //}
-            //Thread.Sleep(2000);// Đợi 2 giây
-            //server1.sender(listBox_clientIP.SelectedItem.ToString(), "pict");
+            Thread.Sleep(2000);
+            server1.sender(listBox_clientIP.SelectedItem.ToString(), "chat");
         }
     }
 }

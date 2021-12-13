@@ -80,6 +80,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PhoneBookDataSet.cs">
+      <DependentUpon>PhoneBookDataSet.xsd</DependentUpon>
+    </Compile>
     <Compile Include="PhoneBookDataSet.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -102,6 +105,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <EmbeddedResource Include="Server.resx">
       <DependentUpon>Server.cs</DependentUpon>
@@ -148,10 +152,20 @@
     <Content Include="PhoneBook.mdf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <None Include="PhoneBookAvatar\1772.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="PhoneBookAvatar\1995.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="PhoneBookAvatar\2344.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <Content Include="PhoneBook_log.ldf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <DependentUpon>PhoneBook.mdf</DependentUpon>
     </Content>
+    <EmbeddedResource Include="SqlQuery\DetailSearch_query.sql" />
     <EmbeddedResource Include="SqlQuery\PhoneBookInfo_query.sql" />
   </ItemGroup>
   <ItemGroup />
