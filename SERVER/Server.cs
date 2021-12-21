@@ -64,22 +64,53 @@ namespace SERVER
             }
         }
 
+        //void AddRemove_MessList(string IP,string message,bool add = true)
+        //{
+        //    if (listBox_clientIP.InvokeRequired || txtBox_messageList.InvokeRequired)
+        //    {
+        //        if (listBox_clientIP.InvokeRequired && !string.IsNullOrEmpty(IP) )
+        //        {
+        //            var action = new addStringCallBack(AddRemove_listBox);
+        //            action.Invoke(IP, !add);
+        //        }
+
+        //        if (txtBox_messageList.InvokeRequired && !string.IsNullOrEmpty(message) )
+        //        {
+        //            var action2 = new addStringCallBack(AddStringTo_messageList);
+        //            action2.Invoke(message, false);
+        //        }
+
+        //    }
+        //    else
+        //    {
+        //        if (add)
+        //        {
+        //            listBox_clientIP.Items.Add(IP);
+        //        }
+        //        else
+        //        {
+        //            listBox_clientIP.Items.Remove(IP);
+        //        }
+        //        txtBox_messageList.Text += $"{message} {Environment.NewLine}";
+        //    }
+        //}
+
 
         private void HandleClientConnected(ServerRecivedArgs e)
         {
+            //AddRemove_MessList(e.IP, $"{e.IP} has connected",true);
             if (listBox_clientIP.InvokeRequired || txtBox_messageList.InvokeRequired)
             {
                 var action = new addStringCallBack(AddRemove_listBox);
-                action.BeginInvoke(e.IP,false, EndAsync, action);
-
-                action = new addStringCallBack(AddStringTo_messageList);
-                action.BeginInvoke($"{e.IP} has connected", false, EndAsync, action);
+                action.BeginInvoke(e.IP, false,EndAsync, action);
+                var action2 = new addStringCallBack(AddStringTo_messageList);
+                action2.BeginInvoke($"{e.IP} has connected", false,EndAsync,action2);
 
             }
             else
             {
                 listBox_clientIP.Items.Add(e.IP);
-                txtBox_messageList.Text += $"{e.IP} has connected {Environment.NewLine}";
+                txtBox_messageList.Text += $"{e.IP} {Environment.NewLine}";
             }
         }
 
@@ -90,8 +121,8 @@ namespace SERVER
                 var action = new addStringCallBack(AddRemove_listBox);
                 action.BeginInvoke(e.IP, true, EndAsync, action);
 
-                action = new addStringCallBack(AddStringTo_messageList);
-                action.BeginInvoke($"{e.IP} has disconnected", false, EndAsync, action);
+                var action2 = new addStringCallBack(AddStringTo_messageList);
+                action2.BeginInvoke($"{e.IP} has disconnected", false, EndAsync, action2);
 
             }
             else
@@ -99,11 +130,26 @@ namespace SERVER
                 listBox_clientIP.Items.Remove(e.IP);
                 txtBox_messageList.Text += $"{e.IP} has disconnected {Environment.NewLine}";
             }
-            //listBox_clientIP.Items.Remove(e.IP);
-            //txtBox_messageList.Text += $"{e.IP}:Disconnected:(( {Environment.NewLine}";
         }
         private async void HandleServerRecived(ServerRecivedArgs e)
         {
+            //AddRemove_MessList(e.IP, $"Processing {e.IP} request", false);
+            if (listBox_clientIP.InvokeRequired || txtBox_messageList.InvokeRequired)
+            {
+                var action = new addStringCallBack(AddRemove_listBox);
+                action.BeginInvoke(e.IP, true, EndAsync, action);
+                var action2 = new addStringCallBack(AddStringTo_messageList);
+                action2.BeginInvoke($"Processing {e.IP} request", false, EndAsync, action2);
+
+            }
+            else
+            {
+                listBox_clientIP.Items.Remove(e.IP);
+                txtBox_messageList.Text += $"Processing {e.IP} request {Environment.NewLine}";
+            }
+
+
+
             switch (e.cmd)
             {
                 case "chat":
@@ -115,14 +161,28 @@ namespace SERVER
                     await server1.sender(e.IP, "pict");
                     break;
                 case "info":
-                    server1.xmlsConversion(e.cmd, e.IP);
+                    await server1.xmlsConversion(e.cmd, e.IP);
                     //server1.sender(e.IP, "xmls");
                     break;
                 case "detl":
-                    server1.xmlsConversion(e.cmd, e.IP,e.cmd_details);
+                    await server1.xmlsConversion(e.cmd, e.IP,e.cmd_details);
                     break;
                 default:
                     break;
+            }
+            //AddRemove_MessList(e.IP, $"Finished {e.IP} request", true);
+            if (listBox_clientIP.InvokeRequired || txtBox_messageList.InvokeRequired)
+            {
+                var action = new addStringCallBack(AddRemove_listBox);
+                action.BeginInvoke(e.IP, false, EndAsync, action);
+                var action2 = new addStringCallBack(AddStringTo_messageList);
+                action2.BeginInvoke($"Finished {e.IP} request", false, EndAsync, action2);
+
+            }
+            else
+            {
+                listBox_clientIP.Items.Add(e.IP);
+                txtBox_messageList.Text += $"Finished {e.IP} request {Environment.NewLine}";
             }
         }
         private void btn_send_Click(object sender, EventArgs e)

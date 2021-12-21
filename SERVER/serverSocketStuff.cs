@@ -228,7 +228,7 @@ namespace SERVER
             return true;
         }
 
-        public async void xmlsConversion(string cmd, string IP,string detail = "")
+        public async Task<bool> xmlsConversion(string cmd, string IP,string detail = "")
         {
 
             DataTable PhoneBookTable = new DataTable("PhoneBookTable");
@@ -263,6 +263,7 @@ namespace SERVER
             {
                 var ImageTask = await imageConversion(item, IP);
             }
+            return true;
         }
     }
 }

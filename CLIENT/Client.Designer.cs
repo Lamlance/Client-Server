@@ -40,6 +40,8 @@ namespace CLIENT
             this.pictureBox_avatar = new System.Windows.Forms.PictureBox();
             this.dataGridView_detail = new System.Windows.Forms.DataGridView();
             this.textBox_log = new System.Windows.Forms.TextBox();
+            this.button_info = new System.Windows.Forms.Button();
+            this.button_detl = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView_info)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox_avatar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView_detail)).BeginInit();
@@ -56,7 +58,7 @@ namespace CLIENT
             // 
             // btn_connect
             // 
-            this.btn_connect.Location = new System.Drawing.Point(187, 470);
+            this.btn_connect.Location = new System.Drawing.Point(287, 15);
             this.btn_connect.Name = "btn_connect";
             this.btn_connect.Size = new System.Drawing.Size(75, 23);
             this.btn_connect.TabIndex = 1;
@@ -99,11 +101,11 @@ namespace CLIENT
             // 
             // btn_sendMess
             // 
-            this.btn_sendMess.Location = new System.Drawing.Point(106, 470);
+            this.btn_sendMess.Location = new System.Drawing.Point(187, 470);
             this.btn_sendMess.Name = "btn_sendMess";
             this.btn_sendMess.Size = new System.Drawing.Size(75, 23);
             this.btn_sendMess.TabIndex = 6;
-            this.btn_sendMess.Text = "Send";
+            this.btn_sendMess.Text = "Chat";
             this.btn_sendMess.UseVisualStyleBackColor = true;
             this.btn_sendMess.Click += new System.EventHandler(this.btn_sendMess_Click);
             // 
@@ -124,6 +126,7 @@ namespace CLIENT
             this.pictureBox_avatar.Location = new System.Drawing.Point(785, 44);
             this.pictureBox_avatar.Name = "pictureBox_avatar";
             this.pictureBox_avatar.Size = new System.Drawing.Size(245, 199);
+            this.pictureBox_avatar.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureBox_avatar.TabIndex = 8;
             this.pictureBox_avatar.TabStop = false;
             // 
@@ -148,11 +151,33 @@ namespace CLIENT
             this.textBox_log.Size = new System.Drawing.Size(241, 236);
             this.textBox_log.TabIndex = 10;
             // 
+            // button_info
+            // 
+            this.button_info.Location = new System.Drawing.Point(106, 471);
+            this.button_info.Name = "button_info";
+            this.button_info.Size = new System.Drawing.Size(75, 23);
+            this.button_info.TabIndex = 11;
+            this.button_info.Text = "Get Info";
+            this.button_info.UseVisualStyleBackColor = true;
+            this.button_info.Click += new System.EventHandler(this.button_info_Click);
+            // 
+            // button_detl
+            // 
+            this.button_detl.Location = new System.Drawing.Point(25, 471);
+            this.button_detl.Name = "button_detl";
+            this.button_detl.Size = new System.Drawing.Size(75, 23);
+            this.button_detl.TabIndex = 12;
+            this.button_detl.Text = "Search detail";
+            this.button_detl.UseVisualStyleBackColor = true;
+            this.button_detl.Click += new System.EventHandler(this.button_detl_Click);
+            // 
             // ClientApp
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1038, 505);
+            this.Controls.Add(this.button_detl);
+            this.Controls.Add(this.button_info);
             this.Controls.Add(this.textBox_log);
             this.Controls.Add(this.dataGridView_detail);
             this.Controls.Add(this.pictureBox_avatar);
@@ -188,6 +213,8 @@ namespace CLIENT
         private System.Windows.Forms.PictureBox pictureBox_avatar;
         private System.Windows.Forms.DataGridView dataGridView_detail;
         private System.Windows.Forms.TextBox textBox_log;
+        private System.Windows.Forms.Button button_info;
+        private System.Windows.Forms.Button button_detl;
     }
 }
 

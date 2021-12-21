@@ -87,7 +87,7 @@ namespace CLIENT
             }
         }
 
-        private static async void ReceiveCallback(IAsyncResult ar)
+        private async void ReceiveCallback(IAsyncResult ar)
         {
             try
             {
