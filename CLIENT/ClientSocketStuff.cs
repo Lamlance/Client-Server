@@ -127,6 +127,15 @@ namespace CLIENT
                 _clientSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(ReceiveCallback), null);
 
             }
+            catch (SocketException)
+            {
+                if (!_clientSocket.Connected)
+                { 
+                    MessageBox.Show("Connection lost!");
+                    _clientSocket.Shutdown(SocketShutdown.Both);
+                    _clientSocket.Close();
+                }
+            }
             catch (Exception e) 
             {
                 Console.WriteLine(e.Message);
